@@ -9,7 +9,9 @@ import torch
 from torchvision import transforms
 from networks.resnet import resnet50
 import numpy as np
-
+import random
+import string
+from io import BytesIO
 
 app = FastAPI()
 # 定义保存目录
@@ -60,13 +62,20 @@ async def detect(file: UploadFile = File(...)):
     if not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a video")
 
-    # 保存视频文件
-    video_path = UPLOAD_DIR / file.filename
-    with video_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    file_bytes = await file.read()
+    file_stream = BytesIO(file_bytes)
 
-    # 读取视频文件
-    cap = cv2.VideoCapture(str(video_path))
+    # 使用 cv2 从字节流中读取视频
+    file_array = np.frombuffer(file_stream.read(), np.uint8)
+    cap = cv2.VideoCapture(cv2.imdecode(file_array, cv2.IMREAD_COLOR))
+
+    # # 保存视频文件
+    # video_path = UPLOAD_DIR / (generate_random_suffix()+file.filename)
+    # with video_path.open("wb") as buffer:
+    #     shutil.copyfileobj(file.file, buffer)
+    #
+    # # 读取视频文件
+    # cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)  # 获取视频的帧率
     interval = max(int(fps / 5), 1)  # 计算每秒截取5帧的间隔
 
@@ -102,6 +111,10 @@ async def detect(file: UploadFile = File(...)):
     predictions = predict(face_frames)
 
     return {"result": predictions }
+
+def generate_random_suffix(length: int = 8) -> str:
+    """生成随机字符串后缀"""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 if __name__ == '__main__':
     import uvicorn
