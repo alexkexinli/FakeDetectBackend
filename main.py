@@ -68,7 +68,6 @@ async def detect(file: UploadFile = File(...)):
     # file_bytes = await file.read()
     # file_stream = BytesIO(file_bytes)
     #
-    # # 使用 cv2 从字节流中读取视频
     # file_array = np.frombuffer(file_stream.read(), np.uint8)
     # cap = cv2.VideoCapture(cv2.imdecode(file_array, cv2.IMREAD_COLOR))
 
@@ -80,8 +79,9 @@ async def detect(file: UploadFile = File(...)):
     # 读取视频文件
     cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)  # 获取视频的帧率
-    print(f"fps is {fps}")
-    interval = max(int(fps / 5), 1)  # 计算每秒截取5帧的间隔
+    total_frame_count=cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    print(f"fps is {fps},frame count is {total_frame_count}")
+    interval = max(int(fps / 2), 1)  # 计算每秒截取2帧的间隔
 
     frame_count = 0
     face_frames = []
@@ -97,8 +97,17 @@ async def detect(file: UploadFile = File(...)):
             # 检测人脸
             face_locations = face_recognition.face_locations(rgb_frame, model='cnn')
             if face_locations:
-            # if True:
-                face_frames.append(rgb_frame)
+                top, right, bottom, left = face_locations[0]
+                # 扩展裁剪区域，保留更多面部特征（可根据需要调整）
+                h, w, _ = rgb_frame.shape
+                padding_w = int(0.4 * (right - left))
+                padding_h = int(0.4 * (bottom - top))
+                left = max(left - padding_w, 0)
+                top = max(top - padding_h, 0)
+                right = min(right + padding_w, w)
+                bottom = min(bottom + padding_h, h)
+                cropped_img = rgb_frame[top:bottom, left:right]
+                face_frames.append(cropped_img)
                 # 如果已达到10张图片，停止处理
                 if len(face_frames) >= 10:
                     break
