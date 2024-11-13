@@ -20,5 +20,7 @@ face_recognition
 torch
 torchvision
 numpy
+moviepy
+pillow
 opencv-python
 python-multipart
