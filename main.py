@@ -15,7 +15,7 @@ import numpy as np
 import random
 import string
 from io import BytesIO
-
+from PIL import Image
 app = FastAPI()
 # 定义保存目录
 UPLOAD_DIR = Path("uploads/")
@@ -50,15 +50,18 @@ def predict(imgs):
     with torch.no_grad():
         y_pred = []
         for img in imgs:
+            img=img.unsqueeze(0)
+            print(img.shape)
             print(type(img),"img")
             in_tens = img.cuda()
             y_pred.extend(model(in_tens).sigmoid().flatten().tolist())
 
     realcounter = 0
+    print("y_pred: ",y_pred)
     for pred in y_pred:
         if pred <=0.5:
             realcounter+=1
-    return realcounter >=8
+    return not realcounter >=8
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
     # 检查文件类型
@@ -85,6 +88,7 @@ async def detect(file: UploadFile = File(...)):
 
     frame_count = 0
     face_frames = []
+    pil_frame=[]
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -99,6 +103,7 @@ async def detect(file: UploadFile = File(...)):
             if face_locations:
             # if True:
                 face_frames.append(rgb_frame)
+                pil_frame.append(Image.fromarray(rgb_frame))
                 # 如果已达到10张图片，停止处理
                 if len(face_frames) >= 10:
                     break
@@ -112,7 +117,7 @@ async def detect(file: UploadFile = File(...)):
 
 
     # 将结果转换为列表
-    predictions = predict(face_frames)
+    predictions = predict(pil_frame)
 
     return {"result": predictions }
 
