@@ -9,6 +9,8 @@ import shutil
 from pathlib import Path
 import face_recognition
 import torch
+from numpy.distutils.misc_util import rel_path
+from sympy import shape
 from torchvision import transforms
 from networks.resnet import resnet50
 import numpy as np
@@ -16,6 +18,7 @@ import random
 import string
 from io import BytesIO
 from PIL import Image
+
 app = FastAPI()
 # 定义保存目录
 UPLOAD_DIR = Path("uploads/")
@@ -39,12 +42,12 @@ rz_func = transforms.Resize((loadSize, loadSize))
 
 # 定义图像转换
 covert_tensor = transforms.Compose([
-        rz_func,
-        crop_func,
-        flip_func,
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    rz_func,
+    crop_func,
+    flip_func,
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
 def predict(imgs):
     imgs = [covert_tensor(img) for img in imgs]
     with torch.no_grad():
@@ -71,11 +74,14 @@ async def detect(file: UploadFile = File(...)):
     # file_bytes = await file.read()
     # file_stream = BytesIO(file_bytes)
     #
+    # # 使用 cv2 从字节流中读取视频
     # file_array = np.frombuffer(file_stream.read(), np.uint8)
     # cap = cv2.VideoCapture(cv2.imdecode(file_array, cv2.IMREAD_COLOR))
 
     # 保存视频文件
+
     video_path = UPLOAD_DIR / (generate_random_suffix()+file.filename)
+    print("vdieo path is :",str(video_path),"file name is : ", file.filename)
     with video_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
@@ -101,18 +107,9 @@ async def detect(file: UploadFile = File(...)):
             # 检测人脸
             face_locations = face_recognition.face_locations(rgb_frame, model='cnn')
             if face_locations:
-                top, right, bottom, left = face_locations[0]
-                # 扩展裁剪区域，保留更多面部特征（可根据需要调整）
-                h, w, _ = rgb_frame.shape
-                padding_w = int(0.4 * (right - left))
-                padding_h = int(0.4 * (bottom - top))
-                left = max(left - padding_w, 0)
-                top = max(top - padding_h, 0)
-                right = min(right + padding_w, w)
-                bottom = min(bottom + padding_h, h)
-                cropped_img = rgb_frame[top:bottom, left:right]
-                face_frames.append(cropped_img)
-                pil_frame.append(Image.fromarray(cropped_img))
+                # if True:
+                face_frames.append(rgb_frame)
+                pil_frame.append(Image.fromarray(rgb_frame))
                 # 如果已达到10张图片，停止处理
                 if len(face_frames) >= 10:
                     break
@@ -126,6 +123,7 @@ async def detect(file: UploadFile = File(...)):
 
 
     # 将结果转换为列表
+
     predictions = predict(pil_frame)
 
     return {"result": predictions }
@@ -136,15 +134,16 @@ async def detect2(file: UploadFile = File(...)):
     # 检查文件类型
     if not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a video")
-
-    video_path = UPLOAD_DIR / (generate_random_suffix()+file.filename)
-    with video_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    byte=file.file.read()
+    name = generate_random_suffix()+file.filename
+    fout = open(name,'wb')
+    fout.write(byte)
+    fout.close()
     # 将上传文件读取为字节数据
 
 
     # 使用 moviepy 从字节流中读取视频
-    clip = VideoFileClip(str(video_path))
+    clip = VideoFileClip(name)
     # 逐帧读取并处理视频
     frames = []
     interval = 0.5  # 每秒提取 2 帧
@@ -153,11 +152,11 @@ async def detect2(file: UploadFile = File(...)):
         frame = clip.get_frame(t)  # 获取在时间 t 处的视频帧
         frames.append(frame)  # 保存每一帧（以 NumPy 数组格式保存）
         t += interval  # 每次增加 0.5 秒
-
+    print(frames[0].shape)
     # 释放资源
     clip.reader.close()
 
-    print("size "+ len(frames))
+    print("size ",len(frames))
     if not frames:
         return JSONResponse(content={"message": "No faces detected in the video."})
 
@@ -171,6 +170,24 @@ async def detect2(file: UploadFile = File(...)):
 def generate_random_suffix(length: int = 8) -> str:
     """生成随机字符串后缀"""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+
+
+def save_np_array_as_image(np_array: np.ndarray, folder_path: str, file_name: str):
+    # 检查并创建目标文件夹
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # 将 numpy 数组转换为图片对象
+    image = Image.fromarray(np_array)
+
+    # 构造保存路径
+    save_path = os.path.join(folder_path, file_name)
+
+    # 保存图片到指定路径
+    image.save(save_path)
+    print(f"Image saved at: {save_path}")
+    return rel_path
 
 if __name__ == '__main__':
     import uvicorn
