@@ -15,7 +15,8 @@ import numpy as np
 import random
 import string
 from io import BytesIO
-
+from audio.getflec import extract_audio
+from audio.test import evaluate_audio_from_path
 app = FastAPI()
 # 定义保存目录
 UPLOAD_DIR = Path("uploads/")
@@ -23,9 +24,7 @@ FRAME_DIR = Path("frames/")
 UPLOAD_DIR.mkdir(exist_ok=True)
 FRAME_DIR.mkdir(exist_ok=True)
 
-# 加载你的二分类模型
-# 请替换为你的模型路径和加载方式
-model_path = 'model_epoch_last.pth'
+model_path = 'model_epoch_last_2.pth'
 # get model
 model = resnet50(num_classes=1)
 model.load_state_dict(torch.load(model_path, map_location='cpu'), strict=True)
@@ -58,7 +57,7 @@ def predict(imgs):
     for pred in y_pred:
         if pred <=0.5:
             realcounter+=1
-    return realcounter >=8
+    return realcounter >=8,y_pred
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
     # 检查文件类型
@@ -70,11 +69,15 @@ async def detect(file: UploadFile = File(...)):
     #
     # file_array = np.frombuffer(file_stream.read(), np.uint8)
     # cap = cv2.VideoCapture(cv2.imdecode(file_array, cv2.IMREAD_COLOR))
-
+    random_suffix=generate_random_suffix()
     # 保存视频文件
-    video_path = UPLOAD_DIR / (generate_random_suffix()+file.filename)
+    video_path = UPLOAD_DIR / (random_suffix+file.filename)
+    audio_path=UPLOAD_DIR / (random_suffix+".flac")
     with video_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
+    extract_audio(str(video_path),str(audio_path))
+    aud_rst,aud_pos=evaluate_audio_from_path(str(audio_path))
 
     # 读取视频文件
     cap = cv2.VideoCapture(str(video_path))
@@ -121,9 +124,10 @@ async def detect(file: UploadFile = File(...)):
 
 
     # 将结果转换为列表
-    predictions = predict(face_frames)
+    video_rst,vid_pos = predict(face_frames)
 
-    return {"result": predictions }
+    rst=video_rst&aud_rst
+    return {"result": rst,"aud_pos":aud_pos,"vid_pos":vid_pos }
 
 
 @app.post("/detect2")
