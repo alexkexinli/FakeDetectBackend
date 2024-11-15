@@ -34,7 +34,9 @@ model.to(device)
 
 
 def pad(x, max_len=64600):
+    print("x.shape ",x.shape)
     x_len = x.shape[0]
+
     if x_len >= max_len:
         return x[:max_len]
     # need to pad
@@ -47,7 +49,10 @@ def pad(x, max_len=64600):
 def evaluate_audio(audio):
     X_pad = pad(audio, 64600)
     # input_tensor = torch.tensor(audio, dtype=torch.float32).unsqueeze(0)  # 转为张量，并添加 batch 维度
+    print("X_pad.shape ",X_pad.shape)
     x_inp = Tensor(X_pad).unsqueeze(0).to(device)
+    print("x_inp.shape ",x_inp.shape)
+    print(type(audio))
     with torch.no_grad():
         output = model(x_inp)  # 调用模型进行推理
 
