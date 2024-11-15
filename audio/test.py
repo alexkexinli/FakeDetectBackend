@@ -31,7 +31,14 @@ model.eval()
 model.to(device)
 
 
-
+def extract_channel(file_path, channel_index=0):
+    # 读取音频文件
+    data, samplerate = sf.read(file_path)
+    
+    # 提取指定声道的数据
+    channel_data = data[:, channel_index]  # 根据索引选择声道
+    
+    return channel_data, samplerate
 
 def pad(x, max_len=64600):
     print("x.shape ",x.shape)
@@ -82,9 +89,28 @@ def evaluate_audio_from_path(audio_file_path: str):
 
     audio, sr = sf.read(path)
     print(f"file {sr}")
-    audio=audio.mean(axis=1)
-    result,probabilities = evaluate_audio(audio)
 
+    # 检查音频是否是双声道
+    if len(audio.shape) > 1 and audio.shape[1] == 2:
+        # 提取左右声道
+        left_channel = audio[:, 0]  # 左声道
+        right_channel = audio[:, 1]  # 右声道
+        print("Separated stereo audio into left and right channels.")
+    else:
+        left_channel = audio
+        right_channel = audio
+        print("Audio is already mono.")
+
+    # 调用模型进行评估
+    result_left, probabilities_left = evaluate_audio(left_channel)
+    result_right, probabilities_right = evaluate_audio(right_channel)
+
+    # audio=audio.mean(axis=1)
+    # result,probabilities = evaluate_audio(audio)
+    result=False
+    if result_left == True and result_right == True:
+        result=True
+    probabilities=torch.stack((probabilities_left, probabilities_right), dim=0)
     print(f"audio Evaluating {path.name}...")
     print("audio Result:", result)
     return result,probabilities
@@ -96,7 +122,8 @@ if __name__ == "__main__":
 
     # 模型和音频文件路径
     model_path = "./models/weights/AASIST-L.pth"  # 替换为模型路径
-    audio_file_path = "./test_audio/LA_E_4581379.flac"  # 替换为你的 .flac 文件路径
-
+    audio_file_path_0 = "./test_audio/testvideo-channel_0.flac"  # 替换为你的 .flac 文件路径
+    audio_file_path_1 = "./test_audio/testvideo-channel_1.flac"
     # 调用主函数进行评估
-    evaluate_audio_from_path(audio_file_path)
+    evaluate_audio_from_path(audio_file_path_0)
+    evaluate_audio_from_path(audio_file_path_1)

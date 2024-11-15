@@ -1,4 +1,5 @@
 from moviepy.editor import VideoFileClip
+import soundfile as sf
 
 def extract_audio(input_video_path, output_audio_path):
     # 加载视频
