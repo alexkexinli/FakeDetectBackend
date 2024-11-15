@@ -85,7 +85,7 @@ async def detect(file: UploadFile = File(...)):
     video_path = UPLOAD_DIR / (random_suffix+file.filename)
     audio_path=UPLOAD_DIR / (random_suffix+".flac")
 
-    print("vdieo path is :",str(video_path),"file name is : ", file.filename)
+    print("video path is :",str(video_path),"audio name is : ", str(audio_path))
 
     with video_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
