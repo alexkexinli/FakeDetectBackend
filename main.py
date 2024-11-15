@@ -64,8 +64,9 @@ def predict(imgs):
     for pred in y_pred:
         if pred <=0.5:
             realcounter+=1
+    real_percentage=realcounter/len(y_pred)
     print("real pecentage : ", realcounter/len(y_pred))
-    return (not realcounter >=(0.8 * len(y_pred))),y_pred
+    return (real_percentage<0.8),y_pred
 
 
 @app.post("/detect")
