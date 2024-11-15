@@ -107,6 +107,10 @@ def evaluate_audio_from_path(audio_file_path: str):
 
     # audio=audio.mean(axis=1)
     # result,probabilities = evaluate_audio(audio)
+    print("result_left")
+    print(result_left)
+    print("result_right")
+    print(result_right)
     result=False
     if result_left == True and result_right == True:
         result=True
