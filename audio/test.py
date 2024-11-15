@@ -85,8 +85,8 @@ def evaluate_audio_from_path(audio_file_path: str):
     audio=audio.mean(axis=1)
     result,probabilities = evaluate_audio(audio)
 
-    print(f"Evaluating {path.name}...")
-    print("Result:", result)
+    print(f"audio Evaluating {path.name}...")
+    print("audio Result:", result)
     return result,probabilities
 
 
