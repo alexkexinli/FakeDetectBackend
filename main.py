@@ -136,8 +136,8 @@ async def detect(file: UploadFile = File(...)):
 
 
 
-    rst=video_rst&aud_rst
-    return {"result": rst,"aud_pos":aud_pos,"vid_pos":vid_pos }
+    rst=video_rst and aud_rst
+    return {"result": rst,"aud_pos":str(aud_pos),"vid_pos":str(vid_pos) }
 
 
 @app.post("/detect2")
