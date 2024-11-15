@@ -66,7 +66,7 @@ def predict(imgs):
             realcounter+=1
     real_percentage=realcounter/len(y_pred)
     print("real possbility : ",real_percentage)
-    return (real_percentage<0.8),y_pred
+    return (real_percentage>0.8),y_pred
 
 
 @app.post("/detect")
@@ -138,7 +138,7 @@ async def detect(file: UploadFile = File(...)):
 
 
 
-    rst=video_rst and not aud_rst
+    rst=video_rst and aud_rst
     return {"result": rst,"aud_pos":str(aud_pos),"vid_pos":str(vid_pos) }
 
 
