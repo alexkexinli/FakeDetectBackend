@@ -82,7 +82,7 @@ def evaluate_audio_from_path(audio_file_path: str):
 
     audio, sr = sf.read(path)
     print(f"file {sr}")
-
+    audio=audio.mean(axis=1)
     result,probabilities = evaluate_audio(audio)
 
     print(f"Evaluating {path.name}...")
