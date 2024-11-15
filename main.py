@@ -125,14 +125,14 @@ async def detect(file: UploadFile = File(...)):
 
     cap.release()
 
-    if not face_frames:
+    if not pil_frame:
         return JSONResponse(content={"message": "No faces detected in the video."})
 
 
 
     # 将结果转换为列表
 
-    video_rst,vid_pos = predict(face_frames)
+    video_rst,vid_pos = predict(pil_frame)
 
 
 
