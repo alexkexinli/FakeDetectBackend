@@ -136,7 +136,7 @@ async def detect(file: UploadFile = File(...)):
 
 
 
-    rst=video_rst and aud_rst
+    rst=video_rst and not aud_rst
     return {"result": rst,"aud_pos":str(aud_pos),"vid_pos":str(vid_pos) }
 
 
