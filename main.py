@@ -64,7 +64,7 @@ def predict(imgs):
     for pred in y_pred:
         if pred <=0.5:
             realcounter+=1
-    return (not realcounter >=8),y_pred
+    return (not realcounter >=80),y_pred
 
 
 @app.post("/detect")
@@ -119,7 +119,7 @@ async def detect(file: UploadFile = File(...)):
                 face_frames.append(rgb_frame)
                 pil_frame.append(Image.fromarray(rgb_frame))
                 # 如果已达到10张图片，停止处理
-                if len(face_frames) >= 10:
+                if len(face_frames) >= 100:
                     break
         frame_count += 1
 
