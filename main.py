@@ -66,6 +66,7 @@ def predict(imgs):
             realcounter+=1
     real_percentage=realcounter/len(y_pred)
     print("real pecentage : ", realcounter/len(y_pred))
+    print("real possbility : ",real_percentage)
     return (real_percentage<0.8),y_pred
 
 
